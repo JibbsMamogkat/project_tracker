@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Group Project Tracker</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+    <main id="app-container">
+        <h1>Project Tracker</h1>
+
+        <div id="project-list">
+            <div class="project-card" data-project-id="1">
+                <h2>Project: Web App Tracker</h2>
+                <hr>
+
+                <ul class="week-list">
+                    <li class="week-item" data-week="12">
+                        <h3>Week 12 (Oct 20 - Oct 26)</h3>
+                        
+                        <div class="task-category-group">
+                            <span class="category-name">DSP LAB</span>
+                            <ul class="tasks">
+                                <li class="task-item">
+                                    <input type="checkbox" id="task-1" checked>
+                                    <label for="task-1">2ND PHASE OF DSP PROJECT</label>
+                                </li>
+                                <li class="task-item">
+                                    <input type="checkbox" id="task-2">
+                                    <label for="task-2">PROJECT PROGRESS REPORT (NOV 4)</label>
+                                </li>
+                            </ul>
+                            <button class="add-task-btn">Add Task</button>
+                        </div>
+                        
+                        <div class="task-category-group">
+                            <span class="category-name">DSP LEC</span>
+                            <ul class="tasks">
+                                <li class="task-item">
+                                    <input type="checkbox" id="task-3">
+                                    <label for="task-3">Online lec (Oct 23, Thurs, 5-6:15pm)</label>
+                                </li>
+                            </ul>
+                            <button class="add-task-btn">Add Task</button>
+                        </div>
+                    </li>
+                </ul>
+
+                <button class="add-week-btn">Add New Week</button>
+            </div>
+            
+        </div>
+
+        <button id="add-project-btn">+ Add New Project</button>
+    </main>
+    
+    <script src="script.js"></script>
+</body>
+</html>

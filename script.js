@@ -6,6 +6,8 @@ document.addEventListener('DOMContentLoaded', () => {
     // --- 2. Data Structure ---
     let projectsData = []; 
     const generateUniqueId = () => Date.now() + Math.floor(Math.random() * 1000); 
+    // NEW: Variable to track which project is currently displayed
+    let activeProjectId = null;
 
     // --- 3. Initial Sample Data (for demonstration) ---
     const initialSampleData = [
@@ -338,21 +340,21 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // --- Tab Management Functions ---
 
-    // Function to render the HTML tabs
+// Function to render the HTML tabs
     const renderTabs = () => {
         const tabBar = document.getElementById('tab-bar');
         tabBar.innerHTML = ''; // Clear existing tabs
 
         if (projectsData.length === 0) return;
 
-        projectsData.forEach((project, index) => {
+        projectsData.forEach((project) => { // Removed index here, unnecessary
             const tabButton = document.createElement('button');
             tabButton.classList.add('tab-btn');
             tabButton.textContent = project.name;
             tabButton.setAttribute('data-project-id', project.id);
             
-            // Set the first tab as active by default
-            if (index === 0) {
+            // Check against the stored activeProjectId
+            if (project.id == activeProjectId) { 
                 tabButton.classList.add('active');
             }
 
@@ -365,15 +367,19 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // Function to handle switching project visibility
     const switchTab = (projectId) => {
-        // 1. Update the tabs (visual style)
+        // 1. NEW: Store the active project ID
+        activeProjectId = projectId; 
+
+        // 2. Update the tabs (visual style)
         document.querySelectorAll('.tab-btn').forEach(btn => {
             btn.classList.remove('active');
-            if (btn.getAttribute('data-project-id') == projectId) {
+            // Compare string IDs using == (since data-project-id is a string)
+            if (btn.getAttribute('data-project-id') == projectId) { 
                 btn.classList.add('active');
             }
         });
 
-        // 2. Update the project content (visibility)
+        // 3. Update the project content (visibility)
         document.querySelectorAll('.project-card').forEach(card => {
             card.style.display = 'none';
             if (card.getAttribute('data-project-id') == projectId) {
@@ -473,8 +479,9 @@ document.addEventListener('DOMContentLoaded', () => {
         renderTabs();
 
         // 4. Set Initial View (show the first project)
-        const firstProjectId = projectsData[0].id;
-        switchTab(firstProjectId);
+        // If activeProjectId is null (first load), default to the first project
+        const projectIdToShow = activeProjectId || projectsData[0].id; 
+        switchTab(projectIdToShow);
 
         // 5. Attach Event Listeners
         attachEventListeners();
@@ -667,4 +674,8 @@ document.addEventListener('DOMContentLoaded', () => {
     
     // --- 9. Initialize the App ---
     loadData();
+    // After loadData, if projects exist, set the initial active ID
+    if (projectsData.length > 0) {
+        activeProjectId = projectsData[0].id;
+    }
 });

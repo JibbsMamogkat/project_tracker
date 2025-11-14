@@ -104,3 +104,106 @@ button:hover {
     font-size: 1.1em;
     margin-top: 20px;
 }
+
+/* Styling for all delete buttons */
+.delete-btn {
+    background: none;
+    color: #f08080; /* Red color for delete action */
+    border: 1px solid #f08080;
+    padding: 0 5px;
+    margin-left: 10px;
+    font-size: 0.8em;
+    height: 20px;
+    line-height: 1;
+}
+
+.delete-btn:hover {
+    background-color: #f08080;
+    color: #1e1e1e;
+}
+
+.task-item {
+    /* Ensure the button is aligned with the label */
+    justify-content: space-between; 
+}
+
+/* Task Styling */
+.task-item {
+    display: flex; /* Enables flexbox layout */
+    align-items: flex-start; /* Aligns content to the top */
+    padding: 3px 0;
+    color: #9cdcfe;
+    /* Use space-between to push the content (left) and delete button (right) */
+    justify-content: space-between; 
+}
+
+/* New style for the task text container */
+.task-content {
+    display: flex;
+    align-items: flex-start;
+    /* Allow the task content to take up most of the space */
+    flex-grow: 1; 
+}
+
+.task-item label {
+    margin-left: 8px;
+    cursor: pointer;
+    /* Crucial: ensures text wraps normally instead of stretching to center */
+    max-width: 90%; 
+}
+
+/* Style for the input field when editing an item name */
+.editable-name-input {
+    background-color: #333;
+    color: #fff;
+    border: 1px solid #007acc;
+    padding: 2px 5px;
+    font-family: inherit;
+    font-size: inherit;
+    /* Set a minimum width to handle short text */
+    min-width: 150px; 
+}
+
+/* --- Tab Bar Styling --- */
+
+#tab-bar {
+    display: flex;
+    margin-bottom: 20px;
+    border-bottom: 2px solid #333;
+    padding-bottom: 5px;
+}
+
+.tab-btn {
+    background-color: #252526; /* Project card background */
+    color: #9cdcfe;
+    border: 1px solid #333;
+    border-bottom: none;
+    padding: 10px 15px;
+    margin-right: 5px;
+    cursor: pointer;
+    border-radius: 4px 4px 0 0;
+    transition: background-color 0.2s, color 0.2s;
+    font-size: 1em;
+}
+
+.tab-btn:hover {
+    background-color: #333;
+}
+
+.tab-btn.active {
+    background-color: #1e1e1e; /* Match body background */
+    color: #f08080; /* Highlight color */
+    border-top: 1px solid #f08080;
+    border-left: 1px solid #333;
+    border-right: 1px solid #333;
+    font-weight: bold;
+    /* Ensure the active tab border covers the bottom separator */
+    position: relative;
+    bottom: -2px; 
+    z-index: 10;
+}
+
+/* Ensure only the active project card is visible */
+#project-list .project-card {
+    display: none; 
+}

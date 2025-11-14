@@ -192,19 +192,225 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     };
 
+    const deleteTask = (taskId) => {
+        // Find the task and the array it belongs to
+        let found = false;
+        for (const project of projectsData) {
+            for (let i = 0; i < project.weeks.length; i++) {
+                const week = project.weeks[i];
+                for (let j = 0; j < week.categories.length; j++) {
+                    const category = week.categories[j];
+                    
+                    // Find the index of the task to delete
+                    const taskIndex = category.tasks.findIndex(t => t.id == taskId);
+                    
+                    if (taskIndex !== -1) {
+                        // Use splice to remove the task from its array
+                        category.tasks.splice(taskIndex, 1);
+                        found = true;
+                        break; 
+                    }
+                }
+                if (found) break;
+            }
+            if (found) break;
+        }
+
+        if (found) {
+            saveData(); 
+            renderProjects(); // Re-render the UI to reflect the removal
+        } else {
+            console.error(`Task ID ${taskId} not found.`);
+        }
+    };
+
+    const deleteCategory = (projectId, weekNumber, categoryName) => {
+        const project = projectsData.find(p => p.id == projectId);
+        if (!project) return;
+        
+        const week = project.weeks.find(w => w.number == weekNumber);
+        if (!week) return;
+
+        // Filter the categories array, keeping only those whose name DOES NOT match
+        const initialLength = week.categories.length;
+        week.categories = week.categories.filter(c => c.name !== categoryName);
+
+        if (week.categories.length < initialLength) {
+            saveData();
+            renderProjects();
+        } else {
+            console.error(`Category ${categoryName} not found in Week ${weekNumber}.`);
+        }
+    };
+
+    const deleteWeek = (projectId, weekNumber) => {
+        const project = projectsData.find(p => p.id == projectId);
+        if (!project) return;
+        
+        // Filter the weeks array, keeping only those whose number DOES NOT match
+        const initialLength = project.weeks.length;
+        project.weeks = project.weeks.filter(w => w.number != weekNumber);
+
+        if (project.weeks.length < initialLength) {
+            saveData();
+            renderProjects();
+        } else {
+            console.error(`Week ${weekNumber} not found in Project ID ${projectId}.`);
+        }
+    };
+
+    const deleteProject = (projectId) => {
+        // Filter the main projectsData array, keeping only projects whose ID DOES NOT match
+        const initialLength = projectsData.length;
+        projectsData = projectsData.filter(p => p.id != projectId);
+
+        if (projectsData.length < initialLength) {
+            saveData();
+            renderProjects();
+        } else {
+            console.error(`Project ID ${projectId} not found.`);
+        }
+    };
+
+    const updateName = (type, id, newName) => {
+        let found = false;
+        
+        // Handle Project update
+        if (type === 'project') {
+            const project = projectsData.find(p => p.id == id);
+            if (project) {
+                project.name = newName;
+                found = true;
+            }
+        } 
+        
+        // Handle Task update
+        else if (type === 'task') {
+            // Reusing logic from deleteTask to find the task
+            for (const project of projectsData) {
+                for (const week of project.weeks) {
+                    for (const category of week.categories) {
+                        const task = category.tasks.find(t => t.id == id);
+                        if (task) {
+                            task.description = newName;
+                            found = true;
+                            break;
+                        }
+                    }
+                    if (found) break;
+                }
+                if (found) break;
+            }
+        } 
+        
+        // Handle Week and Category updates (more complex ID format: projectId_weekNum_categoryName)
+        else if (type === 'week' || type === 'category') {
+            const parts = id.split('_');
+            const projectId = parts[0];
+            const weekNumber = parseInt(parts[1]);
+            const project = projectsData.find(p => p.id == projectId);
+
+            if (project) {
+                const week = project.weeks.find(w => w.number === weekNumber);
+                if (week) {
+                    if (type === 'week') {
+                        week.dates = newName;
+                        found = true;
+                    } else if (type === 'category' && parts[2]) {
+                        const oldCategoryName = parts[2];
+                        const category = week.categories.find(c => c.name === oldCategoryName);
+                        if (category) {
+                            category.name = newName;
+                            found = true;
+                        }
+                    }
+                }
+            }
+        }
+
+        if (found) {
+            saveData();
+            // No need to re-render; the DOM update is handled locally by the event listener
+        } else {
+            console.error(`Could not update name for type ${type} with ID ${id}`);
+        }
+    };
+
+    // --- Tab Management Functions ---
+
+    // Function to render the HTML tabs
+    const renderTabs = () => {
+        const tabBar = document.getElementById('tab-bar');
+        tabBar.innerHTML = ''; // Clear existing tabs
+
+        if (projectsData.length === 0) return;
+
+        projectsData.forEach((project, index) => {
+            const tabButton = document.createElement('button');
+            tabButton.classList.add('tab-btn');
+            tabButton.textContent = project.name;
+            tabButton.setAttribute('data-project-id', project.id);
+            
+            // Set the first tab as active by default
+            if (index === 0) {
+                tabButton.classList.add('active');
+            }
+
+            tabButton.addEventListener('click', () => {
+                switchTab(project.id);
+            });
+            tabBar.appendChild(tabButton);
+        });
+    };
+
+    // Function to handle switching project visibility
+    const switchTab = (projectId) => {
+        // 1. Update the tabs (visual style)
+        document.querySelectorAll('.tab-btn').forEach(btn => {
+            btn.classList.remove('active');
+            if (btn.getAttribute('data-project-id') == projectId) {
+                btn.classList.add('active');
+            }
+        });
+
+        // 2. Update the project content (visibility)
+        document.querySelectorAll('.project-card').forEach(card => {
+            card.style.display = 'none';
+            if (card.getAttribute('data-project-id') == projectId) {
+                card.style.display = 'block'; // Show the selected project
+            }
+        });
+    };
+
 
     // --- 6. HTML Rendering Helper Functions ---
 
     const createTaskHTML = (task) => `
         <li class="task-item">
-            <input type="checkbox" id="task-${task.id}" data-task-id="${task.id}" ${task.completed ? 'checked' : ''}>
-            <label for="task-${task.id}">${task.description}</label>
+            <div class="task-content">
+                <input type="checkbox" id="task-${task.id}" data-task-id="${task.id}" ${task.completed ? 'checked' : ''}>
+                <label for="task-${task.id}">
+                    <span class="editable-name" data-id="${task.id}" data-type="task">${task.description}</span>
+                </label>
+            </div>
+            <button class="delete-btn delete-task-btn" data-task-id="${task.id}">x</button> 
         </li>
     `;
 
-    const createCategoryHTML = (category) => `
+    const createCategoryHTML = (category, projectId, weekNumber) => ` 
         <div class="task-category-group">
-            <span class="category-name">// ${category.name}</span>
+            <span class="category-name">
+                // 
+                <span class="editable-name" data-id="${projectId}_${weekNumber}_${category.name}" data-type="category">${category.name}</span>
+                <button 
+                    class="delete-btn delete-category-btn" 
+                    data-project-id="${projectId}"
+                    data-week-num="${weekNumber}"
+                    data-category-name="${category.name}"
+                >
+                    x
+                </button>
+            </span>
             <ul class="tasks">
                 ${category.tasks.map(createTaskHTML).join('')}
             </ul>
@@ -214,8 +420,18 @@ document.addEventListener('DOMContentLoaded', () => {
 
     const createWeekHTML = (week, projectId) => ` 
         <li class="week-item" data-week-num="${week.number}">
-            <h3>week ${week.number} (${week.dates})</h3>
-            ${week.categories.map(createCategoryHTML).join('')}
+            <h3>
+                week ${week.number} 
+                <span class="editable-name" data-id="${projectId}_${week.number}" data-type="week">(${week.dates})</span>
+                <button 
+                    class="delete-btn delete-week-btn" 
+                    data-project-id="${projectId}" 
+                    data-week-num="${week.number}"
+                >
+                    x
+                </button>
+            </h3>
+            ${week.categories.map(category => createCategoryHTML(category, projectId, week.number)).join('')}
             
             <button class="add-category-btn" data-project-id="${projectId}" data-week-num="${week.number}">
                 + Add Category
@@ -223,10 +439,13 @@ document.addEventListener('DOMContentLoaded', () => {
         </li>
     `;
     
-    // NOTE: We now need to pass the project.id to createWeekHTML!
     const createProjectHTML = (project) => `
         <div class="project-card" data-project-id="${project.id}">
-            <h2>Project: ${project.name}</h2>
+            <h2>
+                Project: 
+                <span class="editable-name" data-id="${project.id}" data-type="project">${project.name}</span>
+                <button class="delete-btn delete-project-btn" data-project-id="${project.id}">x</button>
+            </h2>
             <hr>
             <ul class="week-list">
                 ${project.weeks.map(week => createWeekHTML(week, project.id)).join('')} 
@@ -234,26 +453,77 @@ document.addEventListener('DOMContentLoaded', () => {
             <button class="add-week-btn" data-project-id="${project.id}">Add New Week</button>
         </div>
     `;
-
-
     // --- 7. Main Rendering Function ---
 
     const renderProjects = () => {
-        // Clear the existing content
+        // 1. Clear the existing content
         projectListContainer.innerHTML = ''; 
 
         if (projectsData.length === 0) {
             projectListContainer.innerHTML = '<p style="color: #999;">No projects yet. Click "Add New Project" to begin!</p>';
-        } else {
-            const projectsHTML = projectsData.map(createProjectHTML).join('');
-            projectListContainer.innerHTML = projectsHTML;
+            renderTabs(); // Still render tabs to clear any old ones
+            return;
         }
 
-        // Attach event listeners after rendering is complete
+        // 2. Generate Project Cards HTML
+        const projectsHTML = projectsData.map(createProjectHTML).join('');
+        projectListContainer.innerHTML = projectsHTML;
+        
+        // 3. Render and Manage Tabs
+        renderTabs();
+
+        // 4. Set Initial View (show the first project)
+        const firstProjectId = projectsData[0].id;
+        switchTab(firstProjectId);
+
+        // 5. Attach Event Listeners
         attachEventListeners();
     };
 
     // --- 8. Event Listener Setup ---
+    // Function to initiate edit mode
+    const activateEditMode = (element) => {
+        const currentText = element.textContent;
+        const input = document.createElement('input');
+        input.type = 'text';
+        input.value = currentText.trim();
+        input.classList.add('editable-name-input');
+
+        const calculatedWidth = Math.max(element.offsetWidth * 1.1, 150); // Use 150px as a backup width
+        input.style.width = `${calculatedWidth}px`;
+
+        element.replaceWith(input); // Replace the span with the input field
+        input.focus();
+
+        const saveEdit = () => {
+            const newName = input.value.trim();
+            const elementType = element.getAttribute('data-type');
+            const elementId = element.getAttribute('data-id');
+
+            if (newName === '') {
+                // If they cleared the name, restore the old one
+                alert("Name cannot be empty. Reverting change.");
+                input.value = currentText; 
+            }
+            
+            // Save to data structure
+            updateName(elementType, elementId, newName);
+            
+            // Re-insert the original span with the new text
+            element.textContent = newName;
+            input.replaceWith(element);
+        };
+
+        // Event: Save on loss of focus
+        input.addEventListener('blur', saveEdit);
+        
+        // Event: Save on Enter key press
+        input.addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') {
+                saveEdit();
+            }
+        });
+    };
 
     const attachEventListeners = () => {
         // 8a. Task Completion Toggler
@@ -336,6 +606,60 @@ document.addEventListener('DOMContentLoaded', () => {
                     addCategory(projectId, weekNumber, categoryName.trim());
                 } else if (categoryName !== null) {
                     alert("Category name cannot be empty.");
+                }
+            };
+        });
+
+        //EDITING LISTENER!!
+        // NEW: Double-click listener for all editable names
+        projectListContainer.querySelectorAll('.editable-name').forEach(span => {
+            // Prevent multiple listeners from being attached during re-render
+            span.removeEventListener('dblclick', activateEditMode.bind(null, span)); 
+            span.addEventListener('dblclick', activateEditMode.bind(null, span));
+        });
+        
+        //DELETE LISTENERS!!
+        // NEW: Listener for Delete Task buttons
+        projectListContainer.querySelectorAll('.delete-task-btn').forEach(btn => {
+            btn.onclick = (e) => {
+                const taskId = e.target.getAttribute('data-task-id');
+                if (confirm("Are you sure you want to delete this task?")) {
+                    deleteTask(taskId);
+                }
+            };
+        });
+        // NEW: Listener for Delete Category buttons
+        projectListContainer.querySelectorAll('.delete-category-btn').forEach(btn => {
+            btn.onclick = (e) => {
+                const projectId = btn.getAttribute('data-project-id');
+                const weekNumber = parseInt(btn.getAttribute('data-week-num'));
+                const categoryName = btn.getAttribute('data-category-name');
+                
+                if (confirm(`Are you sure you want to delete the category "${categoryName}" and all its tasks?`)) {
+                    deleteCategory(projectId, weekNumber, categoryName);
+                }
+            };
+        });
+
+        // NEW: Listener for Delete Week buttons
+        projectListContainer.querySelectorAll('.delete-week-btn').forEach(btn => {
+            btn.onclick = (e) => {
+                const projectId = btn.getAttribute('data-project-id');
+                const weekNumber = parseInt(btn.getAttribute('data-week-num'));
+                
+                if (confirm(`WARNING: Are you sure you want to delete Week ${weekNumber} and ALL its content?`)) {
+                    deleteWeek(projectId, weekNumber);
+                }
+            };
+        });
+
+        // NEW: Listener for Delete Project buttons
+        projectListContainer.querySelectorAll('.delete-project-btn').forEach(btn => {
+            btn.onclick = (e) => {
+                const projectId = btn.getAttribute('data-project-id');
+                
+                if (confirm("🚨 WARNING: Are you sure you want to delete this ENTIRE PROJECT? All weeks, categories, and tasks will be lost.")) {
+                    deleteProject(projectId);
                 }
             };
         });
